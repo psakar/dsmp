@@ -1,0 +1,140 @@
+From Source
+
+ Download the sources.
+ 
+ Create a file <<<dsmp-test.conf>>> in the same directory as <<<pom.xml>>> which should look like this:
+ 
++-------------------------------------------------------+
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<dsmp-config>
+
+<!-- On which port to serve proxy requests -->
+<server port="8787" />
+<!-- Which proxy to use if we don't have a file -->
+<proxy host="proxy" port="80" user="" password=""/>
+
+</dsmp-config>
++-------------------------------------------------------+
+ 
+ This file should contain your proxy settings (the tests try to download a single
+ file from the central maven repository). If you need no proxy, just
+ delete the proxy element or comment it out.
+ 
++---------------------+
+mvn assembly:assembly
++---------------------+
+
+ This gives you <<<target/dsmp-1.1-jar-with-dependencies.jar>>>
+ which contains averything you need.
+ 
+Setup
+
+ DSMP needs three things:
+ 
+   [[1]] The JAR
+ 
+   [[2]] The config file <<<dsmp.conf>>> (see <<<src/test/resources/dsmp-test.conf>>> for
+   an example)
+ 
+   [[3]] The config for log4j (<<<log4j.properties>>>, optional)
+
+ Let's have a look at a standard startup file:
+ 
++-----------------------------+
+set DSMP_HOME=C:\dsmp
+
+java -classpath %DSMP_HOME%\conf;target\dsmp-1.1-jar-with-dependencies.jar de.pdark.dsmp.Main %DSMP_HOME%
++-----------------------------+
+
+ This script allows to run DSMP out of a source installation.
+ 
+ First, we define the path to a place where DSMP will store all
+ it's file and where it will expect it's configuration.
+ 
+ The classpath includes a conf directory which allows you
+ to overide the default <<<log4j.properties>>> which are included
+ in the JAR with your own version (for debugging).
+ 
+ The main class <<<de.pdark.dsmp.Main>>> takes a single
+ argument which is the path to the data directory where
+ it will expect <<<dsmp.conf>>> and where it will put
+ the cache and look for patches (if the paths in <<<dsmp.conf>>>
+ are relative ones).
+
+ Here is a step by step guide to run DSMP:
+ 
+   [[1]] Build DSMP from the source
+ 
+   [[2]] Adjust the path for DSMP_HOME in <<<dsmp.bat>>> (Windows) or <<<dsmp.sh>>> (Unix/Linux)
+ 
+   [[3]] Create the directory set in DSMP_HOME
+ 
+   [[4]] Copy <<<src/test/resources/dsmp-test.conf>>> as <<<dsmp.conf>>> into this directory
+ 
+   [[5]] Adjust the new <<<dsmp.conf>>> to your needs. You'll probably have to change the
+   port and the proxy settings. If you need no proxy (if you are connected directly to the
+   internet), you can delete or comment out the proxy element.
+ 
+   Usually, you'll also have to replace the mirror "http://maven.sateh.com/maven2" 
+   with the one closest to you. If that's ibiblio.org or repo1.maven.org, you can
+   delete the superfluous redirect.
+ 
+   Check the allow and deny rules and delete them or comment them out.
+ 
+   [[6]] Run the script.
+ 
+ You should see:
+ 
++----------------------------+
+[INFO ] Config - Loading config from /tmp/dsmp/dsmp.conf
+[INFO ] Server - Opening connection on port 8003
+[INFO ] Main - Dead Stupid Maven Proxy 1.1 is ready.
+[DEBUG] Main - Debugging is enabled.
++----------------------------+
+
+ Note the port number. That's the port number you'll need in your <<<settings.xml>>>
+ for Maven. If DSMP runs on your own machine, add this to the top of <<<settings.xml>>>:
+ 
++-------------------------+
+  <proxies>
+    <proxy>
+      <host>localhost</host>
+      <port>8003</port>
+    </proxy>
+  </proxies>
++-------------------------+
+
+ When you run Maven now (for example, <<<mvn clean -U>>> in the DSMP project), you
+ should see:
+ 
++-------------------------+
+[DEBUG] RequestHandler - Got connection from /127.0.0.1
+[INFO ] RequestHandler - Got request for http://repo1.maven.org/maven2/org/apache/maven/plugins/maven-clean-plugin/maven-metadata.xml
+[INFO ] Config - Redirecting request to mirror http://maven.sateh.com/maven2/org/apache/maven/plugins/maven-clean-plugin/maven-metadata.xml
+[INFO ] ProxyDownload - Downloading to /tmp/dsmp/cache/maven.sateh.com/maven2/org/apache/maven/plugins/maven-clean-plugin/maven-metadata.xml
+[INFO ] ProxyDownload - Download status: 200
+[INFO ] ProxyDownload - Content: 422 bytes; text/xml
+...
+[INFO ] RequestHandler - Got request for http://repo1.maven.org/maven2/org/apache/maven/plugins/maven-clean-plugin/2.1/maven-clean-plugin-2.1.jar.sha1
+[INFO ] Config - Redirecting request to mirror http://maven.sateh.com/maven2/org/apache/maven/plugins/maven-clean-plugin/2.1/maven-clean-plugin-2.1.jar.sha1
+[INFO ] ProxyDownload - Downloading to /tmp/dsmp/cache/maven.sateh.com/maven2/org/apache/maven/plugins/maven-clean-plugin/2.1/maven-clean-plugin-2.1.jar.sha1
+[INFO ] ProxyDownload - Download status: 200
+[INFO ] ProxyDownload - Content: 40 bytes; text/plain
+[DEBUG] RequestHandler - Terminating connection with /127.0.0.1
++-------------------------+
+
+ Explanation: First, the RequestHandler tells us that is has received a connection
+ from Maven on localhost (127.0.0.1).
+ 
+ Then, Maven sends a request to download <<<http://repo1.maven.org/maven2/org/apache/maven/plugins/maven-clean-plugin/maven-metadata.xml>>>
+ In the config is a rule which redirects this request to <<<maven.sateh.com>>>.
+ The file is downloaded and stored in <<</tmp/dsmp/cache/maven.sateh.com/...>>>
+ The download was successful (<<<Download status: 200>>>), it was 422 bytes long
+ and the type is <<<text/xml>>>.
+ 
+ This happens several times until you get <<<Terminating connection>>> which
+ means that Maven has closed the connection.
+ 
+ Congratulation, DSMP is ready for work.
+ 
+ Now, go on to {{{usage.html}the usage section}} to learn what it can and can't do.

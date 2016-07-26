@@ -1,0 +1,303 @@
+ ----
+ DSMP Usage
+ ----
+
+Configuration Changes
+
+ When you start using DSMP, you will find that you change the
+ config file <<<dsmp.conf>>> quite often.
+ 
+ All you need to notify DSMP of a change of the config file is to
+ save it. DSMP will notice that the file has changed before the
+ next download and load the changes.
+ 
+ If there is an error in the config, DSMP will write the problem
+ to the log and keep the old config. This way, the proxy stays
+ operational even in case of an mistake.
+ 
+Upstream Proxy
+
+ DSMP itself can be configured to use a proxy to access the internet.
+ 
++---------+
+<!-- Which proxy to use if we don't have a file -->
+<proxy host="proxy" port="80" user="" password="" no-proxy="domain,domain.com,localhost"/>
++---------+
+ 
+ If you don't know what to fill into these fields, have a look into
+ the settings of your browser or ask your admin.
+
+Cache and Patches
+
+ DSMP keeps a cache of all files it has ever downloaded and of all
+ failed downloads. Therefore, it will never try to download a file
+ a second time. There is no timeout, so what's in your cache is
+ what Maven will see.
+ 
+ There is just one exception: patches. Sometimes, the official releases
+ have bugs or you they lag behind. For example, the official PMD plugin
+ uses version 3.7 of the PMD project but you need features of PMD 3.8.
+ Since 3.7 and 3.8 are API compatible, it's a simple matter of putting
+ the PMD 3.8 JAR somewhere (see below) and patching the pom.xml of the
+ PMD plugin (just replace the version of the PMD dependency with 3.8).
+ 
+ Therefore, you can configure DSMP to look into a certain directory for
+ patches. If it finds something there, the patch will always take
+ precedence over any cached file.
+ 
+ The config looks like this:
+ 
++----------+
+<!-- Directories where things can be found. Relative paths are relative to
+     the base directory (first parameter on the command line when starting
+     DSMP)
+-->
+<directories cache="cache-dir" patches="patches-dir" />
++----------+
+
+* Patches and Checksums
+
+ Maven requires checksums for all files it downloads. DSMP generates checksums
+ for all patches which you provide, so you don't have to do this manually.
+ 
+ Have you ever seen this:
+ 
++----------------------+
+[WARNING] *** CHECKSUM FAILED - Checksum failed on download: local = 'b9548ee5b46458a4f104f03940da110173215943'; remote = '6abad5d356be425545e62d38b639f0b5303316e4' - RETRYING
+[WARNING] *** CHECKSUM FAILED - Checksum failed on download: local = 'b9548ee5b46458a4f104f03940da110173215943'; remote = '6abad5d356be425545e62d38b639f0b5303316e4' - IGNORING
++----------------------+
+
+ In this case, Maven has downloaded some file but it doesn't match
+ the checksum. But which one?
+ 
+ With DSMP, all you have to do is to search your cache for the second
+ number. In this case, it's an SHA-1 checksum (these are the long ones;
+ the short ones are MD5), so you only have to search the "*.sha1" files.
+ 
+ In my case, it's this file: <<</tmp/dsmp/cache/maven.sateh.com/maven2/org/apache/maven/plugins/maven-project-info-reports-plugin/maven-metadata.xml>>>
+ 
+ Without DSMP, there is nothing you can do. With DSMP, all you have to
+ do is to move (or copy) the file <<<maven-metadata.xml>>> from
+ <<</tmp/dsmp/cache/maven.sateh.com/maven2/org/apache/maven/plugins/maven-project-info-reports-plugin/>>>
+ to
+ <<</tmp/dsmp/patches/maven.sateh.com/maven2/org/apache/maven/plugins/maven-project-info-reports-plugin/>>>
+
+ Now run the last command again with "-U" (so Maven checks the repository again).
+ The warning will be gone. And not only for you but for all developers
+ who use the same DSMP.
+ 
+ If you have more than one DSMP installation, you can share the patches
+ every now and then because inside the patches directory, the structure
+ is always the same. Also, you can easily clean your cache without
+ loosing your patches.
+ 
+* Directory Structure
+
+ When maven downloads something, the URL is made up from a repository root
+ and a path part. For example, when I download <<<commons-parent-1.pom>>>
+ from <<<repo1.maven.org>>>, the full URL looks like this:
+ 
++--------------------+
+http://repo1.maven.org/maven2/org/apache/commons/commons-parent/1/commons-parent-1.pom
++--------------------+
+
+ In this example, <<<http://repo1.maven.org/maven2/>>> is the repository root
+ and <<<org/apache/commons/commons-parent/1/commons-parent-1.pom>>> is the
+ path part. The idea is that the path part is the same for every repository.
+ 
+ In the cache, you will find a directory per repository server. In our example,
+ the full path for the central maven repository is <<<cache/repo1.maven.org/maven2>>>.
+ 
+ If you're using a maven mirror, for example <<<http://maven.sateh.com/repository>>>,
+ the cache path would be <<<cache/maven.sateh.com/repository>>>.
+ 
+ Inside of this directory, you'll find the standard Maven repository layout.
+ 
+ The same is true for the patches directory; there is just no repository
+ root here.
+ 
+* Status Files
+
+ The cache contains a copy of every file ever downloaded and <<<status>>> files.
+ 
+ A status file contains the reply from the Maven repository when it didn't return
+ a file. This is usually a 404 error (file doesn't exist). This way, you can
+ have lots of Maven repositories in your setup and Maven will still be very
+ fast looking for artefacts because DSMP will quickly return an error for most
+ sites without trying to get out on the net.
+ 
+ You can safely delete these files (as anything else in the cache), even while
+ DSMP runs. DSMP doesn't have an idea what should be in the cache; every time Maven
+ requests a file, DSMP will look again.
+
+Redirecting Requests
+
+ By default, Maven tries to download artefacts from the central Maven repository
+ <<<repo1.maven.org>>>. But every project can define their own repository.
+ Sometimes, you have two projects which define two repositories with the same
+ IDs but different URLs. This makes it impossible to specify mirrors in
+ the {{{http://maven.apache.org/settings.html}settings.xml file}} of Maven.
+ 
+ The solution is to specify DSMP as a proxy in <<<settings.xml>>> (see
+ {{{http://maven.apache.org/settings.html#Proxies}Maven proxies}}). This way,
+ all requests have to pass through DSMP and DSMP can redirect them based on
+ a part of the URL. Example: You're in Europe and you want Maven to download
+ artefacts from your closest mirror, say, Sateh.com.
+ 
++-----------------------------+
+<!-- Redirect all requests to central to the closest mirror -->
+<redirect from="http://repo1.maven.org/maven2" to="http://maven.sateh.com/maven2" />
++-----------------------------+
+
+ You run Maven and you'll see that your cache will now contain <<<maven.sateh.com>>>
+ instead of <<<repo1.maven.org>>> (or in addition to it if you didn't delete the old
+ directory).
+ 
+ After a few days, you notice that you have another directory in your cache:
+ <<<www.ibiblio.org>>>. Where does that come from? It seems that some other
+ project defines this as their preferred download site. No problem, just add this
+ line to <<<dsmp.conf>>>:
+
++-----------------------------+
+<redirect from="http://www.ibiblio.org/maven" to="http://maven.sateh.com/maven2" />
++-----------------------------+
+ 
+ Now, you can delete the <<<www.ibiblio.org>>> directory.
+ 
+ Looking inside of <<<maven.sateh.com>>>, you see that there are two directories
+ in there: <<<repository>>> and <<<maven2>>>. When you check the server, you
+ notice that these two are identical but for Maven, they are different. This means
+ that some files are downloaded twice. Can't have that. Add:
+ 
++-----------------------------+
+<redirect from="http://maven.sateh.com/repository" to="http://maven.sateh.com/maven2" />
++-----------------------------+
+ 
+ Again, you can delete the directory <<<maven.sateh.com/repository>>>.
+ 
+ Some projects look for their artefacts in a completely wrong place. For example,
+ the Project spring-javaconfig looks for <<<org.aopalliance>>> which doesn't
+ exist. Here's the fix:
+ 
++-----------------------------+
+<redirect from="http://m2.safehaus.org/org/aopalliance" to="http://maven.sateh.com/maven2/aopalliance" />
+<redirect from="http://m2.safehaus.org" to="http://maven.sateh.com/maven2" />
++-----------------------------+
+
+ Here, we fix both the broken path (<<<org/aopalliance>>> instead of <<<aopalliance>>>
+ and redirect all requests for <<<m2.safehaus.org>>> to <<<sateh.com>>>. This needs to
+ be split into two rules because DSMP stops at the first matching rule.
+ 
+ In this way, you can add any number of redirects to fix broken projects once and
+ in a central place.
+
+Allow and Deny
+
+* Snapshots
+
+ Sometimes, you just need to use snapshots. But most of the time, you just
+ want a very specific snapshot, not *all* of them. With deny/allow, you
+ can control what Maven can see and what it can't.
+ 
+ For example, we need the snapshot of the <<<maven-deploy-plugin>>> but we
+ certainly don't want the snapshot of the compiler or the site plugin or
+ whatever strange stuff might be in these sites.
+ 
+ The first step is to 
+ {{{http://maven.apache.org/settings.html#Repositories}add the snapshot sites to your settings}}
+ as usual.
+ 
+ Now, we blind Maven with the help of DSMP:
+ 
++-----------------------------+
+<allow url="http://people.apache.org/maven-snapshot-repository/org/apache/maven/plugins/maven-deploy-plugin/" />
+<deny  url="http://people.apache.org/maven-snapshot-repository/org/apache/maven/plugins/" />
++-----------------------------+
+ 
+ What happens is this: When a request comes in, DSMP looks through the list of
+ allows and denies in the order in which they are defined in the config.
+ 
+ If a rule matches, DSMP allows or denies the request. For Maven, it will look
+ as if the file exists or not, no matter what actually is in the remote
+ repository. In our case, the first rule allows Maven to see the
+ <<<maven-deploy-plugin>>> (and everything below) but the deny rule right
+ after it hides anything else in the <<<plugins>>> directory.
+ 
+** Note
+
+ Note that the URLs end with "/". DSMP does a string compare of the URLs.
+ So <<<.../maven/plugins>>> (without the trailing slash) would also match a file
+ <<<.../maven/plugins.xml>>> while <<<.../maven/plugins/>>> only matches the
+ <<<plugins>>> directory and everything below.
+ 
+ Another solution would be to deny access to the site <<<people.apache.org>>>
+ like so:
+ 
++-----------------------------+
+<deny  url="http://people.apache.org/maven-snapshot-repository/" />
++-----------------------------+
+ 
+ To give Maven access to the deploy plugin, you could now copy it into the
+ patches directory.
+ 
+ The drawback of this solution is that you also have to download all
+ the dependencies of the deploy pulgin from <<<people.apache.org>>>
+ and put them into the patches directory. The solution above solves that
+ for you. Maven can download anything from <<<people.apache.org>>> except
+ for any plugins that we don't like.
+ 
+ If you need another plugin, just add another allow rule before the deny
+ rule. If the plugin gets released and you don't need the snapshot anymore,
+ just delete the allow rule.
+ 
+ It's just one change to fix all Maven installations which use your proxy.
+ 
+* Releases
+
+ Sometimes, even released versions of plugins contain bugs which you can't
+ have. Normally, there is just one way to make sure Maven uses the
+ right version: Put the version you want into your pom.xml.
+ 
+ Every pom.xml, that is. Or use parent POMs. Except there is a bug
+ where Maven 2.0.4 will ignore version information from a parent POM
+ and just use the most recent version it can find.
+ 
+ Without DSMP, this can become really ugly. You start to spread version
+ information into all your POMs, you try to put more recent versions
+ of the artefacts into your inhouse repository and hope that Maven always
+ picks your version.
+ 
+ With DSMP, you have many more options to handle these situations. Here
+ are some ideas:
+ 
+ [[1]] Copy the <<<maven-metadata.xml>>> (which contains the latest
+ version number) into the patches directory and put the version you want
+ in there. Note that Maven will not expect released files to change. All
+ your developers will have to delete these files from their local
+ repositories. (FIXME: Would maven -U do the same?)
+ 
+ [[2]] If you can fix the problem, fix it and put the fixed JAR into the
+ patches directory. Again, every developer who already has a copy
+ will have to delete it.
+ 
+ [[3]] Create a fix with a new version number (for example "1.0-1" if
+ the original version is "1.0").
+ 
+ [[4]] Deny access to the directory which contains the broken version.
+ While this won't solve the problem and will break your Maven build
+ (Maven will complain that it cannot download the broken version
+ instead of using another one), you can find all places where the
+ wrong version is used.
+
+Chaining DSMP
+
+ Sometimes, one DSMP is not enough. Two teams might need different settings.
+ Or you have someone in your team who checks the latest versions.
+ 
+ Using the proxy settings in <<<dsmp.conf>>>, you can chain DSMPs in a tree
+ like fashion. For example, you can have one DSMP which is the official
+ Maven Proxy for your company (so almost all artefacts can be found in
+ there) but a developer can run their own installation, redirecting
+ requests to the central DSMP. This allows a developer to have their own
+ set of patches (for example, to check that a fix really works before
+ everyone else has to suffer it).

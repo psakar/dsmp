@@ -1,0 +1,14 @@
+
+Source
+
+  * {{{download/dsmp-${project.version}-src.zip}Version ${project.version}, ZIP}}
+ 
+  * {{{download/dsmp-${project.version}-src.tar.gz}Version ${project.version}, tar.gz}}
+ 
+  * {{{download/dsmp-${project.version}-src.tar.bz2}Version ${project.version}, tar.bz2}}
+
+ See {{{installation.html}this document for installation instructions}}.
+
+Binary
+
+ There is no binary distribution, yet.

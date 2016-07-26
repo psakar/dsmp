@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<faqs id="General FAQ">
+  <part id="General">
+    <faq id="why">
+      <question>Why use DSMP? Why not Archiva?</question>
+      <answer>
+        <p>
+          DSMP is meant to filter all internet accesses of Maven, not
+          to replace Archiva. Usually, you will want to use something
+          like Archiva for your inhouse repository and use DSMP to
+          allow Maven to access the internet (using the proxy element
+          in settings.xml instead of mirror elements).
+        </p>
+      </answer>
+    </faq>
+    <faq id="merge">
+      <question>Why a separate project?</question>
+      <answer>
+        <p>
+          Maybe one day, DSMP will be merged with Archiva (or a similar
+          project). Right now, I did it as a standalone project for
+          these reasons:
+        </p>
+        <ol>
+        <li>DSMP is a proxy, not a repository server</li>
+        <li>On Unix, you build one tool to do one thing. DSMP can (and
+        should be) chained with Archiva, so you can have both or
+        none, just as <em>you</em> need it.</li>
+        <li>DSMP is a standalone server. It cannot run inside Tomcat.</li>
+        </ol>
+      </answer>
+    </faq>
+    <faq id="mail">
+      <question>How to report bugs?</question>
+      <answer>
+        <p>
+    	  There is no mailing list, yet. Just send your bugs and comments
+    	  to <a href="mailto:digulla@hepe.com?Subject=[dsmp]">digulla@hepe.com</a>.
+        </p>
+      </answer>
+    </faq>
+  </part>
+</faqs>

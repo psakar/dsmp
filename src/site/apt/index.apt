@@ -1,0 +1,54 @@
+ -----
+ DSMP Documentation
+ -----
+ Aaron Digulla
+ -----
+ 
+Welcome
+
+ Welcome to the Dead Simple Maven Proxy (DSMP).
+
+ When using Maven, you're sometimes faced with these issues:
+
+   * You want Maven to use a certain mirror site
+
+   * All the developers in your team should use the same plugins.
+ 
+   * An official release is broken or needs a patch to work for you
+ 
+   * How do I allow Maven to use a SNAPSHOT of some plugin without getting
+     all the other snapshots?
+
+   * You compile some project which insists to download dependencies from some
+     obscure site.
+   
+   * You want all the developers in your team to use the same plugins.
+ 
+   * There is an insane firewall installed in your company which just denies
+     to download the odd JAR from the official Maven repository.
+   
+   * You want to use the mirror settings of Maven (in settings.xml) but not all
+     your projects use the same mirror ids. For example, one project thinks
+     "codehaus.org" is for the release site, while another expects to see the
+     SNAPSHOTs there.
+
+ DSMP to the rescue.
+ 
+What DSMP is
+
+ DSMP is a proxy. It can be used as a repository server but it's main purposs
+ it to act as a filter when Maven accesses the internet. If you need a repository
+ server, use Archiva.
+
+Downloads
+
+ You can {{{downloads.html}download DSMP here}}.
+ 
+Installation
+
+ See {{{installation.html}this document}} how to compile and install DSMP.
+ 
+Configuration and Usage
+
+ In {{{usage.html}this document}}, you can find a description of the
+ configuration options and usage patterns.

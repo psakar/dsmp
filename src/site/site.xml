@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="DSMP">
+  <bannerLeft>
+    <name>DSMP</name>
+    <!--src>http://maven.apache.org/images/apache-maven-project.png</src-->
+    <href>http://www.pdark.de/dsmp/</href>
+  </bannerLeft>
+  <!--bannerRight>
+    <src>http://maven.apache.org/images/maven-small.gif</src>
+  </bannerRight-->
+  <body>
+    <links>
+      <item name="DSMP" href="http://www.pdark.de/dsmp/" />
+      <item name="Maven 2" href="http://maven.apache.org/maven2/"/>
+      <item name="Apache" href="http://www.apache.org/" />
+    </links>
+
+    <menu name="DSMP" inherit="top">
+      <item name="Welcome" href="index.html"/>
+      <item name="Downloads" href="downloads.html"/>
+      <item name="Installation" href="installation.html"/>
+      <item name="Usage" href="usage.html"/>
+      <item name="FAQ" href="faq.html"/>
+    </menu>
+    
+    <!--  Doesn't work for some reason :-( -->
+    <menu ref="reports" />
+<!--    
+
+    <menu name="Project Documentation">
+    	<item name="Project Information" href="project-info.html" />
+    	<item name="Project Reports" href="project-reports.html" />
+    </menu>
+-->
+    
+  </body>
+</project>
