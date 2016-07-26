@@ -15,17 +15,24 @@
  */
 package de.pdark.dsmp;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.File;
 import java.net.URL;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
-
-public class ConfigTest extends TestCase
+public class ConfigTest
 {
     public static final Logger log = Logger.getLogger(ConfigTest.class);
-    
+
+    @Test
     public void testGetProperties () throws Exception
     {
         Config.setBaseDir("NoSuchFile");
@@ -41,14 +48,16 @@ public class ConfigTest extends TestCase
             // success
         }
     }
-    
+
+    @Test
     public void testGetPort () throws Exception
     {
         Config.reload ();
         int port = Config.getPort();
         assertEquals (1234, port);
     }
-    
+
+    @Test
     public void testGetPort2 () throws Exception
     {
         System.setProperty("dsmp.conf", "illegal.conf");
@@ -63,43 +72,50 @@ public class ConfigTest extends TestCase
             // success
         }
     }
-    
+
+    @Test
     public void testGetCacheDirectory () throws Exception
     {
         Config.reload ();
         assertEquals ("cache-dir", Config.getCacheDirectory().getName());
     }
-    
+
+    @Test
     public void testGetPatchesDirectory () throws Exception
     {
         Config.reload ();
         assertEquals ("patches-dir", Config.getPatchesDirectory().getName());
     }
-    
+
+    @Test
     public void testGetProxyUsername () throws Exception
     {
         Config.reload ();
         assertEquals ("xxx", Config.getProxyUsername());
     }
-    
+
+    @Test
     public void testGetProxyPassword () throws Exception
     {
         Config.reload ();
         assertEquals ("yyy", Config.getProxyPassword());
     }
-    
+
+    @Test
     public void testGetProxyHost () throws Exception
     {
         Config.reload ();
         assertEquals ("proxy.server", Config.getProxyHost());
     }
-    
+
+    @Test
     public void testGetProxyPort () throws Exception
     {
         Config.reload ();
         assertEquals (234, Config.getProxyPort());
     }
-    
+
+    @Test
     public void testGetNoProxy () throws Exception
     {
         Config.reload ();
@@ -108,65 +124,75 @@ public class ConfigTest extends TestCase
         assertEquals("b", s[1]);
         assertEquals("c", s[2]);
     }
-    
+
+    @Test
     public void testNoProxy1 () throws Exception
     {
         Config.reload ();
         assertFalse (Config.useProxy(new URL ("http://b/x/y/z")));
     }
-    
+
+    @Test
     public void testNoProxy2 () throws Exception
     {
         Config.reload ();
         assertTrue (Config.useProxy(new URL ("http://some.doma.in/x/y/z")));
     }
-    
+
+    @Test
     public void testRedirect () throws Exception
     {
         Config.reload ();
         assertEquals ("http://maven.sateh.com/maven2/org/apache/something",
                 Config.getMirror(new URL ("http://repo1.maven.org/maven2/org/apache/something")).toString());
     }
-    
+
+    @Test
     public void testRedirect2 () throws Exception
     {
         Config.reload ();
         assertEquals ("http://maven.sateh.com/maven2/org/apache/something",
                 Config.getMirror(new URL ("http://maven.sateh.com/repository/org/apache/something")).toString());
     }
-    
+
+    @Test
     public void testRedirect3 () throws Exception
     {
         Config.reload ();
         assertEquals ("http://maven.sateh.com/maven2/aopalliance/x",
                 Config.getMirror(new URL ("http://m2.safehaus.org/org/aopalliance/x")).toString());
     }
-    
+
+    @Test
     public void testRedirect4 () throws Exception
     {
         Config.reload ();
         assertEquals ("http://maven.sateh.com/maven2/org/x",
                 Config.getMirror(new URL ("http://m2.safehaus.org/org/x")).toString());
     }
-    
+
+    @Test
     public void testIsAllowed () throws Exception
     {
         Config.reload ();
         assertTrue (Config.isAllowed(new URL ("http://maven.sateh.com/maven2/org/x")));
     }
-    
+
+    @Test
     public void testIsAllowed1 () throws Exception
     {
         Config.reload ();
         assertTrue (Config.isAllowed(new URL ("http://maven.sateh.com/maven2/org/x")));
     }
-    
+
+    @Test
     public void testIsAllowed2 () throws Exception
     {
         Config.reload ();
         assertTrue (Config.isAllowed(new URL ("http://people.apache.org/maven-snapshot-repository/org/apache/maven/plugins/maven-deploy-plugin/2.3-SNAPSHOT/")));
     }
-    
+
+    @Test
     public void testIsAllowed3 () throws Exception
     {
         Config.reload ();
@@ -175,23 +201,17 @@ public class ConfigTest extends TestCase
     
     private File oldBaseDir;
     
-    @Override
-    protected void setUp () throws Exception
+    @Before
+    public void setUp () throws Exception
     {
-        super.setUp();
-        
-        log.info("--- "+getName()+" ---------------------");
-        
         oldBaseDir = Config.getBaseDirectory();
         Config.setBaseDir("src/test/resources");
         System.setProperty("dsmp.conf", "dsmp-test.conf");
     }
     
-    @Override
-    protected void tearDown () throws Exception
+    @After
+    public void tearDown () throws Exception
     {
-        super.tearDown();
-        
         Config.setBaseDir(oldBaseDir.getPath());
         System.setProperty("dsmp.conf", "dsmp.conf");
     }

@@ -15,16 +15,21 @@
  */
 package de.pdark.dsmp;
 
-import java.io.File;
-import java.net.URL;
+import static org.junit.Assert.assertEquals;
 
 import org.codehaus.plexus.util.FileUtils;
+import org.junit.Before;
+import org.junit.Test;
 
-import junit.framework.TestCase;
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Files;
 
-public class ProxyDownloadTest extends TestCase
+
+public class ProxyDownloadTest
 {
-    
+
+    @Test
     public void testMkdirs () throws Exception
     {
         URL url = new URL ("http://repo1.maven.org/maven2/org/apache/commons/commons-parent/1/commons-parent-1.pom");
@@ -34,22 +39,21 @@ public class ProxyDownloadTest extends TestCase
         String s = f.getAbsolutePath().replace(File.separatorChar, '/');
         assertEquals(expected, s);
     }
-    
+
+    @Test
     public void testDownload () throws Exception
     {
         URL url = new URL ("http://repo1.maven.org/maven2/org/apache/commons/commons-parent/1/commons-parent-1.pom");
-        File f = new File ("tmp/commons-parent-1.pom");
+        File f = Files.createTempFile("zz", "commons-parent-1.pom").toFile();
         ProxyDownload d = new ProxyDownload (url, f);
         d.download();
         
         assertEquals (7616, f.length());
     }
     
-    @Override
-    protected void setUp () throws Exception
+    @Before
+    public void setUp () throws Exception
     {
-        super.setUp();
-
         Config.setBaseDir("tmp");
         File from = new File ("dsmp-test.conf");
         if (!from.exists())
@@ -61,9 +65,4 @@ public class ProxyDownloadTest extends TestCase
         Config.reload ();
     }
 
-    @Override
-    protected void tearDown () throws Exception
-    {
-        super.tearDown();
-    }
 }
