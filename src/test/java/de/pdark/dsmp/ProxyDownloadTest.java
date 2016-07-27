@@ -17,7 +17,7 @@ package de.pdark.dsmp;
 
 import static org.junit.Assert.assertEquals;
 
-import org.codehaus.plexus.util.FileUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -58,10 +58,15 @@ public class ProxyDownloadTest
     public void setUp () throws Exception
     {
         cacheDir = Files.createTempDirectory("zzz").toFile();
-        config = new Config("tmp");
-        File from = new File ("src/test/resources/dsmp-test.conf.xml");
-        FileUtils.copyFile(from, new File ("tmp/dsmp.conf.xml"));
+        config = new Config("src/test/resources");
+        System.setProperty("dsmp.conf", "dsmp-test.conf.xml");
         config.reload ();
+
+    }
+    @After
+    public void tearDown () throws Exception
+    {
+        System.clearProperty("dsmp.conf");
     }
 
 }
