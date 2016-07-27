@@ -10,3 +10,6 @@ target
 # idea
 .idea
 *.iml
+
+# runtime files
+/cache-dir
