@@ -15,15 +15,6 @@
  */
 package de.pdark.dsmp;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URL;
-
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HostConfiguration;
@@ -33,6 +24,15 @@ import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URL;
 
 /**
  * Download a file via a proxy server and store it somewhere.
@@ -45,6 +45,7 @@ public class ProxyDownload
     public static final Logger log = Logger.getLogger(ProxyDownload.class);
     private final URL url;
     private final File dest;
+    private final Config config;
 
     /**
      * Download <code>url</code> to <code>dest</code>.
@@ -55,10 +56,11 @@ public class ProxyDownload
      * @param url The resource to download
      * @param dest Where to store it.
      */
-    public ProxyDownload (URL url, File dest)
+    public ProxyDownload (URL url, File dest, Config config)
     {
         this.url = url;
         this.dest = dest;
+        this.config = config;
     }
     
     /**
@@ -80,7 +82,7 @@ public class ProxyDownload
      */
     public void download () throws IOException, DownloadFailed
     {
-        if (!Config.isAllowed(url))
+        if (!config.isAllowed(url))
         {
             throw new DownloadFailed ("HTTP/1.1 "+HttpStatus.SC_FORBIDDEN+" Download denied by rule in DSMP config");
         }
@@ -113,12 +115,12 @@ public class ProxyDownload
         HttpClient client = new HttpClient();
 
         String msg = "";
-        if (Config.useProxy(url))
+        if (config.useProxy(url))
         {
-            Credentials defaultcreds = new UsernamePasswordCredentials(Config.getProxyUsername(), Config.getProxyPassword());
-            AuthScope scope = new AuthScope(Config.getProxyHost(), Config.getProxyPort(), AuthScope.ANY_REALM);
+            Credentials defaultcreds = new UsernamePasswordCredentials(config.getProxyUsername(), config.getProxyPassword());
+            AuthScope scope = new AuthScope(config.getProxyHost(), config.getProxyPort(), AuthScope.ANY_REALM);
             HostConfiguration hc = new HostConfiguration ();
-            hc.setProxy(Config.getProxyHost(), Config.getProxyPort());
+            hc.setProxy(config.getProxyHost(), config.getProxyPort());
             client.setHostConfiguration(hc);
             client.getState().setProxyCredentials(scope, defaultcreds);
             msg = "via proxy ";
@@ -135,8 +137,7 @@ public class ProxyDownload
             if (0 == 1 && log.isDebugEnabled())
             {
                 Header[] header = get.getResponseHeaders();
-                for (int i=0; i<header.length; i++)
-                    log.debug (header[i].toString().trim());
+                for (Header aHeader : header) log.debug(aHeader.toString().trim());
             }
             
             log.info ("Content: "+valueOf (get.getResponseHeader("Content-Length"))+" bytes; "

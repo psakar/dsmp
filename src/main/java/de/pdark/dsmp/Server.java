@@ -15,11 +15,11 @@
  */
 package de.pdark.dsmp;
 
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import org.apache.log4j.Logger;
 
 /**
  * Wait for connections from somewhere and pass them on to <code>RequestHandler</code>
@@ -32,13 +32,15 @@ public class Server
 {
     public static final Logger log = Logger.getLogger(Server.class);
     
-    private int port;
-    private ServerSocket socket;
+    private final int port;
+    private final Config config;
+    private final ServerSocket socket;
     
-    public Server () throws IOException
+    public Server (Config config) throws IOException
     {
-        port = Config.getPort();
-        
+        port = config.getPort();
+        this.config = config;
+
         log.info("Opening connection on port "+port);
         socket = new ServerSocket (port);
     }
@@ -67,8 +69,8 @@ public class Server
                 continue;
             }
             
-            Config.reload ();
-            Thread t = new RequestHandler (clientSocket);
+//            config.reload ();
+            Thread t = new RequestHandler (clientSocket, config);
             t.start();
         }
         

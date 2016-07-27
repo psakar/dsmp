@@ -28,14 +28,15 @@ import java.nio.file.Files;
 
 public class ProxyDownloadTest
 {
+    private File cacheDir;
+    private Config config;
 
     @Test
     public void testMkdirs () throws Exception
     {
         URL url = new URL ("http://repo1.maven.org/maven2/org/apache/commons/commons-parent/1/commons-parent-1.pom");
-        File f = RequestHandler.getCacheFile(url);
-        File dir = Config.getCacheDirectory();
-        String expected = dir.getAbsolutePath().replace(File.separatorChar, '/')+"/repo1.maven.org/maven2/org/apache/commons/commons-parent/1/commons-parent-1.pom";
+        File f = RequestHandler.getCacheFile(url, cacheDir);
+        String expected = cacheDir.getAbsolutePath().replace(File.separatorChar, '/')+"/repo1.maven.org/maven2/org/apache/commons/commons-parent/1/commons-parent-1.pom";
         String s = f.getAbsolutePath().replace(File.separatorChar, '/');
         assertEquals(expected, s);
     }
@@ -45,7 +46,7 @@ public class ProxyDownloadTest
     {
         URL url = new URL ("http://repo1.maven.org/maven2/org/apache/commons/commons-parent/1/commons-parent-1.pom");
         File f = Files.createTempFile("zz", "commons-parent-1.pom").toFile();
-        ProxyDownload d = new ProxyDownload (url, f);
+        ProxyDownload d = new ProxyDownload (url, f, config);
         d.download();
         
         assertEquals (7616, f.length());
@@ -54,15 +55,11 @@ public class ProxyDownloadTest
     @Before
     public void setUp () throws Exception
     {
-        Config.setBaseDir("tmp");
-        File from = new File ("dsmp-test.conf");
-        if (!from.exists())
-        {
-            File orig = new File ("src/test/resources/dsmp-test.conf");
-            throw new RuntimeException ("Please copy "+orig.getAbsolutePath()+" to "+from.getAbsolutePath()+" and adjust the proxy settings for your site to run this test.");
-        }
+        cacheDir = Files.createTempDirectory("zzz").toFile();
+        config = new Config("tmp");
+        File from = new File ("src/test/resources/dsmp-test.conf");
         FileUtils.copyFile(from, new File ("tmp/dsmp.conf"));
-        Config.reload ();
+        config.reload ();
     }
 
 }

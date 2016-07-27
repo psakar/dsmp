@@ -15,6 +15,13 @@
  */
 package de.pdark.dsmp;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.log4j.Logger;
+import org.codehaus.plexus.digest.DigesterException;
+import org.codehaus.plexus.digest.Md5Digester;
+import org.codehaus.plexus.digest.Sha1Digester;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -30,13 +37,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.log4j.Logger;
-import org.codehaus.plexus.digest.DigesterException;
-import org.codehaus.plexus.digest.Md5Digester;
-import org.codehaus.plexus.digest.Sha1Digester;
-
 /**
  * Handle a connection from a maven.
  * 
@@ -47,11 +47,13 @@ public class RequestHandler extends Thread
 {
     public static final Logger log = Logger.getLogger(RequestHandler.class);
     
-    private Socket clientSocket;
+    private final Socket clientSocket;
+    private final Config config;
 
-    public RequestHandler (Socket clientSocket)
+    public RequestHandler (Socket clientSocket, Config config)
     {
         this.clientSocket = clientSocket;
+        this.config = config;
     }
 
     @Override
@@ -150,24 +152,23 @@ public class RequestHandler extends Thread
         {
             log.error ("Exception while closing the socket", e);
         }
-        clientSocket = null;
     }
 
     private void serveURL (String downloadURL) throws IOException
     {
         URL url = new URL (downloadURL);
-        url = Config.getMirror (url);
+        url = config.getMirror (url);
         
         if (!"http".equals(url.getProtocol()))
             throw new IOException ("Can only handle HTTP requests, got "+downloadURL);
         
         File f = getPatchFile(url);
         if (!f.exists())
-            f = getCacheFile(url);
+            f = getCacheFile(url, config.getCacheDirectory());
         
         if (!f.exists())
         {
-            ProxyDownload d = new ProxyDownload (url, f);
+            ProxyDownload d = new ProxyDownload (url, f, config);
             try
             {
                 d.download();
@@ -208,9 +209,9 @@ public class RequestHandler extends Thread
         data.close();
     }
 
-    public static File getPatchFile (URL url)
+    public File getPatchFile (URL url)
     {
-        File dir = Config.getPatchesDirectory();
+        File dir = config.getPatchesDirectory();
         File f = getCacheFile(url, dir);
         
         if (!f.exists())
@@ -262,12 +263,6 @@ public class RequestHandler extends Thread
             log.warn ("Error writing "+ext.toUpperCase()+" checksum for "+source.getAbsolutePath()+" to "+f.getAbsolutePath(), e);
         }
         
-    }
-
-    public static File getCacheFile (URL url)
-    {
-        File dir = Config.getCacheDirectory();
-        return getCacheFile(url, dir);
     }
 
     public static File getCacheFile (URL url, File root)

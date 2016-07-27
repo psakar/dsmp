@@ -15,6 +15,14 @@
  */
 package de.pdark.dsmp;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.log4j.Logger;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.jdom.input.SAXBuilder;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -23,14 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.log4j.Logger;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
 
 /**
  * Read and manage the configuration.
@@ -45,18 +45,20 @@ public class Config
 {
     public static final Logger log = Logger.getLogger(Config.class);
     
-    private static Document config;
-    private static long configLastModified;
-    private static String BASE_DIR = null;
-    private static int serverPort = 8080;
-    private static String proxyHost = "proxy";
-    private static int proxyPort = 80;
-    private static String proxyUser;
-    private static String proxyPassword;
-    private static File cacheDirectory = new File ("cache");
-    private static File patchesDirectory = new File ("patches");
-    
-    public static synchronized void reload ()
+    private Document config;
+    private long configLastModified;
+    private String BASE_DIR = null;
+    private int serverPort = 8080;
+    private String proxyHost = "proxy";
+    private int proxyPort = 80;
+    private String proxyUser;
+    private String proxyPassword;
+    private File cacheDirectory = new File ("cache");
+    private File patchesDirectory = new File ("patches");
+
+
+
+    public void reload ()
     {
         String fileName = System.getProperty("dsmp.conf", "dsmp.conf");
         File configFile = new File (fileName);
@@ -133,12 +135,12 @@ public class Config
         }
     }
     
-    public static void setBaseDir (String path)
+    public Config (String path)
     {
-        Config.BASE_DIR = path;
+        this.BASE_DIR = path;
     }
     
-    private static int getPort (Element root)
+    private int getPort (Element root)
     {
         int port = getIntProperty (root, "server", "port", 8080);
         int max = 0xffff;
@@ -147,12 +149,12 @@ public class Config
         return port;
     }
     
-    public static int getPort ()
+    public int getPort ()
     {
         return serverPort;
     }
 
-    private static File getCacheDirectory (Element root)
+    private File getCacheDirectory (Element root)
     {
         String defaultValue = "cache";
         
@@ -166,12 +168,12 @@ public class Config
         return f;
     }
     
-    public static File getCacheDirectory ()
+    public File getCacheDirectory ()
     {
         return cacheDirectory;
     }
     
-    private static File getPatchesDirectory (Element root)
+    private File getPatchesDirectory (Element root)
     {
         String defaultValue = "patches";
         
@@ -185,12 +187,12 @@ public class Config
         return f;
     }
 
-    public static File getPatchesDirectory ()
+    public File getPatchesDirectory ()
     {
         return patchesDirectory;
     }
     
-    public static File getBaseDirectory ()
+    public File getBaseDirectory ()
     {
         String path = BASE_DIR;
         if (path == null)
@@ -198,7 +200,7 @@ public class Config
         return new File (path);
     }
 
-    private static String getStringProperty (Element root, String element, String attribute, String defaultValue)
+    private String getStringProperty (Element root, String element, String attribute, String defaultValue)
     {
         Element e = root.getChild(element);
         if (e == null)
@@ -211,7 +213,7 @@ public class Config
         return value;
     }
     
-    private static boolean hasProperty (Element root, String element)
+    private boolean hasProperty (Element root, String element)
     {
         Element e = root.getChild(element);
         if (e == null)
@@ -220,7 +222,7 @@ public class Config
         return true;
     }
     
-    private static String getStringProperty (Element root, String element, String attribute)
+    private String getStringProperty (Element root, String element, String attribute)
     {
         String value = getStringProperty(root, element, attribute, null);
         if (value == null)
@@ -229,7 +231,7 @@ public class Config
         return value;
     }
     
-    private static int getIntProperty (Element root, String element, String attribute, int defaultValue)
+    private int getIntProperty (Element root, String element, String attribute, int defaultValue)
     {
         String value = getStringProperty(root, element, attribute, null);
         if (value == null)
@@ -245,12 +247,12 @@ public class Config
         }
     }
 
-    private static boolean hasProxy (Element root)
+    private boolean hasProxy (Element root)
     {
         return hasProperty (root, "proxy");
     }
     
-    private static String getProxyUsername (Element root)
+    private String getProxyUsername (Element root)
     {
         if (!hasProxy (root))
             return null;
@@ -258,12 +260,12 @@ public class Config
         return getStringProperty (root, "proxy", "user");
     }
 
-    public static String getProxyUsername ()
+    public String getProxyUsername ()
     {
         return proxyUser;
     }
     
-    private static String getProxyPassword (Element root)
+    private String getProxyPassword (Element root)
     {
         if (!hasProxy (root))
             return null;
@@ -271,12 +273,12 @@ public class Config
         return getStringProperty (root, "proxy", "password");
     }
 
-    public static String getProxyPassword ()
+    public String getProxyPassword ()
     {
         return proxyPassword;
     }
     
-    private static String getProxyHost (Element root)
+    private String getProxyHost (Element root)
     {
         if (!hasProxy (root))
             return null;
@@ -284,12 +286,12 @@ public class Config
         return getStringProperty (root, "proxy", "host");
     }
     
-    public static String getProxyHost ()
+    public String getProxyHost ()
     {
         return proxyHost;
     }
     
-    private static int getProxyPort (Element root)
+    private int getProxyPort (Element root)
     {
         int port = getIntProperty (root, "proxy", "port", 80);
         int max = 0xffff;
@@ -298,12 +300,12 @@ public class Config
         return port;
     }
     
-    public static int getProxyPort ()
+    public int getProxyPort ()
     {
         return proxyPort;
     }
     
-    private static class MirrorEntry
+    private class MirrorEntry
     {
         private String from;
         private String to;
@@ -345,9 +347,9 @@ public class Config
         }
     }
     
-    private static List<MirrorEntry> mirrors = Collections.emptyList ();
+    private List<MirrorEntry> mirrors = Collections.emptyList ();
     
-    public static List<MirrorEntry> getMirrors (Element root)
+    public List<MirrorEntry> getMirrors (Element root)
     {
         List<MirrorEntry> l = new ArrayList<MirrorEntry> ();
         for (Iterator iter = root.getChildren("redirect").iterator(); iter.hasNext();)
@@ -367,12 +369,12 @@ public class Config
         return l;
     }
     
-    public static List<MirrorEntry> getMirrors ()
+    public List<MirrorEntry> getMirrors ()
     {
         return mirrors;
     }
     
-    public static URL getMirror (URL url) throws MalformedURLException
+    public URL getMirror (URL url) throws MalformedURLException
     {
         String s = url.toString();
         
@@ -389,9 +391,9 @@ public class Config
         return url;
     }
     
-    private static String[] noProxy = new String[0];
+    private String[] noProxy = new String[0];
     
-    private static String[] getNoProxy (Element root)
+    private String[] getNoProxy (Element root)
     {
         String s = getStringProperty(root, "proxy", "no-proxy", null);
         if (s == null)
@@ -406,12 +408,12 @@ public class Config
         return result;
     }
     
-    public static String[] getNoProxy ()
+    public String[] getNoProxy ()
     {
         return noProxy;
     }
     
-    public static boolean useProxy (URL url)
+    public boolean useProxy (URL url)
     {
         if (!hasProxy (config.getRootElement ()))
             return false;
@@ -425,7 +427,7 @@ public class Config
         return true;
     }
 
-    private static class AllowDeny
+    private class AllowDeny
     {
         private final String url;
         private boolean allow;
@@ -452,9 +454,9 @@ public class Config
         }
     }
     
-    private static List<AllowDeny> allowDeny = Collections.emptyList ();
+    private List<AllowDeny> allowDeny = Collections.emptyList ();
     
-    public static List<AllowDeny> getAllowDeny (Element root)
+    public List<AllowDeny> getAllowDeny (Element root)
     {
         ArrayList<AllowDeny> l = new ArrayList<AllowDeny> ();
         
@@ -474,12 +476,12 @@ public class Config
         return l;
     }
     
-    public static List<AllowDeny> getAllowDeny ()
+    public List<AllowDeny> getAllowDeny ()
     {
         return allowDeny;
     }
     
-    public static boolean isAllowed (URL url)
+    public boolean isAllowed (URL url)
     {
         String s = url.toString();
         for (AllowDeny rule: getAllowDeny())

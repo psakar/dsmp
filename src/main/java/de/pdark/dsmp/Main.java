@@ -35,10 +35,10 @@ public class Main
             if (args.length == 0)
                 throw new IllegalArgumentException ("Usage: $0 home-directory");
             
-            Config.setBaseDir(args[0]);
-            Config.reload ();
+            Config config = new Config(args[0]);
+            config.reload();
             
-            Server server = new Server ();
+            Server server = new Server (config);
             log.info("Dead Stupid Maven Proxy "+VERSION+" is ready.");
             log.debug ("Debugging is enabled.");
             server.handleRequests ();
