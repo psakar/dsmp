@@ -186,12 +186,13 @@ public class ConfigTest
     public void setUp () throws Exception
     {
         config = new Config("src/test/resources");
-        System.setProperty("dsmp.conf", "dsmp-test.conf");
+        System.setProperty("dsmp.conf", "dsmp-test.conf.xml");
         config.reload ();
 
     }
-    @After public void tearDown () throws Exception
+    @After
+    public void tearDown () throws Exception
     {
-        System.setProperty("dsmp.conf", "dsmp.conf");
+        System.clearProperty("dsmp.conf");
     }
 }

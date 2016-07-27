@@ -60,7 +60,7 @@ public class Config
 
     public void reload ()
     {
-        String fileName = System.getProperty("dsmp.conf", "dsmp.conf");
+        String fileName = System.getProperty("dsmp.conf", "dsmp.conf.xml");
         File configFile = new File (fileName);
         if (!configFile.isAbsolute())
             configFile = new File (getBaseDirectory(), fileName);
