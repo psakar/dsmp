@@ -46,7 +46,9 @@ import java.util.HashMap;
 public class RequestHandler extends Thread
 {
     public static final Logger log = Logger.getLogger(RequestHandler.class);
-    
+
+    public static final Logger downloadLog = Logger.getLogger("downloadLog");
+
     private final Socket clientSocket;
     private final Config config;
 
@@ -68,6 +70,7 @@ public class RequestHandler extends Thread
             
             String line;
             boolean keepAlive = false;
+            boolean headOnly = false;
             do
             {
                 String downloadURL = null;
@@ -77,7 +80,7 @@ public class RequestHandler extends Thread
                     if (line.length() == 0)
                         break;
                     
-                    //log.debug ("Got: "+line);
+                    log.debug ("Got: "+line);
                     fullRequest.append (line);
                     fullRequest.append ('\n');
                     
@@ -89,6 +92,14 @@ public class RequestHandler extends Thread
                         int pos = line.lastIndexOf(' ');
                         line = line.substring(4, pos);
                         downloadURL = line;
+                    }
+
+                    if (line.startsWith("HEAD "))
+                    {
+                        int pos = line.lastIndexOf(' ');
+                        line = line.substring(4, pos);
+                        downloadURL = line;
+                        headOnly = true;
                     }
                 }
                 
@@ -102,7 +113,7 @@ public class RequestHandler extends Thread
                 else
                 {
                     log.info ("Got request for "+downloadURL);
-                    serveURL (downloadURL);
+                    serveURL (downloadURL, headOnly);
                 }
             }
             while (line != null && keepAlive);
@@ -154,7 +165,7 @@ public class RequestHandler extends Thread
         }
     }
 
-    private void serveURL (String downloadURL) throws IOException
+    private void serveURL (String downloadURL, boolean headOnly) throws IOException
     {
         URL url = new URL (downloadURL);
         url = config.getMirror (url);
@@ -204,9 +215,15 @@ public class RequestHandler extends Thread
         }
         println (type);
         println ();
+        if (headOnly) {
+            log.info("HEAD for : " + url.toExternalForm());
+            downloadLog.info("Downloaded: " + url.toExternalForm());
+            return;
+        }
         InputStream data = new BufferedInputStream (new FileInputStream (f));
         IOUtils.copy (data, out);
         data.close();
+        downloadLog.info("Downloaded: " + url.toExternalForm());
     }
 
     public File getPatchFile (URL url)
