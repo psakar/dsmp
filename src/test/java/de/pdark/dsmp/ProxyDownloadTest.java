@@ -24,7 +24,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.file.Files;
 
 
 public class ProxyDownloadTest
@@ -47,7 +46,7 @@ public class ProxyDownloadTest
     public void testDownload () throws Exception
     {
         URL url = new URL ("http://repo1.maven.org/maven2/org/apache/commons/commons-parent/1/commons-parent-1.pom");
-        File f = Files.createTempFile("zz", "commons-parent-1.pom").toFile();
+        File f = File.createTempFile("zz", "commons-parent-1.pom");
         ProxyDownload d = new ProxyDownload (url, f, config);
         d.download();
         
@@ -57,7 +56,8 @@ public class ProxyDownloadTest
     @Before
     public void setUp () throws Exception
     {
-        cacheDir = Files.createTempDirectory("zzz").toFile();
+        cacheDir = new File(org.apache.commons.io.FileUtils.getTempDirectory(), System.currentTimeMillis() + "");
+        cacheDir.mkdirs();
         config = new Config("src/test/resources");
         System.setProperty("dsmp.conf", "dsmp-test.conf.xml");
         config.reload ();
