@@ -31,6 +31,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
@@ -69,10 +70,11 @@ public class RequestHandler extends Thread
         InputStream inputStream = null;
         try
         {
-            log.debug ("Got connection from "+clientSocket.getInetAddress());
-            
             inputStream = clientSocket.getInputStream();
             InputStream inputStreamBuffered = new BufferedInputStream(inputStream);
+
+            final InetAddress inetAddress = clientSocket.getInetAddress();
+            log.debug ("Got connection from " + inetAddress);
 
             boolean keepAlive = false;
             String line;
@@ -126,8 +128,8 @@ public class RequestHandler extends Thread
                 }
             }
             while (line != null && keepAlive);
-            
-            log.debug ("Terminating connection with "+clientSocket.getInetAddress());
+
+            log.debug ("Terminating connection with " + inetAddress);
         }
         catch (Exception e)
         {
