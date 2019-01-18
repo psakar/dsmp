@@ -32,7 +32,9 @@ import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.impl.client.SystemDefaultCredentialsProvider;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -52,7 +54,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ProxyDownload
 {
-    public static final Logger log = Logger.getLogger(ProxyDownload.class);
+    public static final Logger log = LogManager.getLogger(ProxyDownload.class);
     private final URL url;
     private final File dest;
     private final Config config;

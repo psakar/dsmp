@@ -16,7 +16,8 @@
 package de.pdark.dsmp;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.digest.DigesterException;
 import org.codehaus.plexus.digest.Md5Digester;
 import org.codehaus.plexus.digest.Sha1Digester;
@@ -44,9 +45,9 @@ import java.util.HashMap;
  */
 public class RequestHandler extends Thread
 {
-    public static final Logger log = Logger.getLogger(RequestHandler.class);
+    public static final Logger log = LogManager.getLogger(RequestHandler.class);
 
-    public static final Logger downloadLog = Logger.getLogger("downloadLog");
+    public static final Logger downloadLog = LogManager.getLogger("downloadLog");
     public static final String KEEP_ALIVE_HEADER = "Proxy-Connection: Keep-Alive".toLowerCase();
 
     private final Socket clientSocket;

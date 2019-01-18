@@ -15,7 +15,8 @@
  */
 package de.pdark.dsmp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The main class.
@@ -25,7 +26,7 @@ import org.apache.log4j.Logger;
  */
 public class Main
 {
-    public static final Logger log = Logger.getLogger(Main.class);
+    public static final Logger log = LogManager.getLogger(Main.class);
     public static final String VERSION = "1.1";
     
     public static void main (String[] args)
@@ -47,6 +48,8 @@ public class Main
         {
             log.error ("Fatal Error in proxy", e);
         }
+        LogManager.shutdown();
     }
-    
+
+
 }
