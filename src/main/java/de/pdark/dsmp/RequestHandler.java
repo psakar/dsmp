@@ -227,6 +227,22 @@ public class RequestHandler extends Thread
         downloadLog.info("Downloaded: " + url.toExternalForm());
     }
 
+    private String formatLastModified(File file, long lastModified) {
+        if (lastModified < 0) {
+            log.error("Last modified of file " + file.getAbsolutePath() + " is less than zero " + lastModified);
+            lastModified = System.currentTimeMillis();
+        }
+        Date d = new Date (lastModified);
+        String format = null;
+        try {
+            format = INTERNET_FORMAT.format(d);
+        } catch (Exception e) {
+            log.error("Last modified of file " + file.getAbsolutePath() + " is " + lastModified + " - " + e.getMessage(), e);
+            format = INTERNET_FORMAT.format(new Date());
+        }
+        return format;
+    }
+
     public File getPatchFile (URL url)
     {
         File dir = config.getPatchesDirectory();
