@@ -64,18 +64,23 @@ public class RequestHandler extends Thread
     @Override
     public void run ()
     {
+        OutputStream outputStream = null;
+        InputStream inputStream = null;
         try
         {
             log.debug ("Got connection from "+clientSocket.getInetAddress());
             
-            String line;
+            inputStream = clientSocket.getInputStream();
+            InputStream inputStreamBuffered = new BufferedInputStream(inputStream);
+
             boolean keepAlive = false;
-            boolean headOnly = false;
+            String line;
             do
             {
+                boolean headOnly = false;
                 String downloadURL = null;
                 StringBuffer fullRequest = new StringBuffer (1024);
-                while ((line = readLine ()) != null)
+                while ((line = readLine (inputStreamBuffered)) != null)
                 {
                     if (line.length() == 0)
                         break;
@@ -114,7 +119,9 @@ public class RequestHandler extends Thread
                 else
                 {
                     log.info ("Got request for "+downloadURL);
-                    serveURL (downloadURL, headOnly);
+                    outputStream = clientSocket.getOutputStream();
+                    OutputStream outputStreamBuffered = new BufferedOutputStream(outputStream);
+                    serveURL(outputStreamBuffered, inputStreamBuffered, downloadURL, headOnly);
                 }
             }
             while (line != null && keepAlive);
@@ -127,11 +134,11 @@ public class RequestHandler extends Thread
         }
         finally
         {
-            close();
+            close(inputStream, outputStream, clientSocket);
         }
     }
 
-    public void close ()
+    public void close(InputStream in, OutputStream out, Socket clientSocket)
     {
         try
         {
@@ -142,8 +149,7 @@ public class RequestHandler extends Thread
         {
             log.error ("Exception while closing the outputstream", e);
         }
-        out = null;
-        
+
         try
         {
             if (in != null)
@@ -153,7 +159,6 @@ public class RequestHandler extends Thread
         {
             log.error ("Exception while closing the inputstream", e);
         }
-        in = null;
 
         try
         {
@@ -166,7 +171,7 @@ public class RequestHandler extends Thread
         }
     }
 
-    private void serveURL (String downloadURL, boolean headOnly) throws IOException
+    private void serveURL(OutputStream out, InputStream in, String downloadURL, boolean headOnly) throws IOException
     {
         URL url = new URL (downloadURL);
         url = config.getMirror (url);
@@ -174,13 +179,13 @@ public class RequestHandler extends Thread
         if (!"http".equals(url.getProtocol()))
             throw new IOException ("Can only handle HTTP requests, got "+downloadURL);
         
-        File f = getPatchFile(url);
-        if (!f.exists())
-            f = getCacheFile(url, config.getCacheDirectory());
+        File file = getPatchFile(url);
+        if (!file.exists())
+            file = getCacheFile(url, config.getCacheDirectory());
         
-        if (!f.exists())
+        if (!file.exists())
         {
-            ProxyDownload d = new ProxyDownload (url, f, config);
+            ProxyDownload d = new ProxyDownload (url, file, config);
             try
             {
                 d.download();
@@ -190,23 +195,25 @@ public class RequestHandler extends Thread
                 log.error(e.getMessage());
                 
                 println (e.getStatusLine());
-                println ();
-                getOut().flush();
+                println (out, e.statusLine);
+                println (out);
+                out.flush();
                 return;
             }
         }
         else
         {
-            log.debug ("Serving from local cache "+f.getAbsolutePath());
+            log.debug ("Serving from local cache "+file.getAbsolutePath());
         }
         
-        println ("HTTP/1.1 200 OK");
-        print ("Date: ");
-        Date d = new Date (f.lastModified());
-        println (INTERNET_FORMAT.format(d));
-        print ("Content-length: ");
-        println (String.valueOf(f.length()));
-        print ("Content-type: ");
+        println (out, "HTTP/1.1 200 OK");
+        print (out, "Date: ");
+        long lastModified = file.lastModified();
+        String lastModifiedFormatted = formatLastModified(file, lastModified);
+        println (out, lastModifiedFormatted);
+        print (out, "Content-length: ");
+        println (out, String.valueOf(file.length()));
+        print (out, "Content-type: ");
         String ext = StringUtils.substringAfterLast(downloadURL, ".").toLowerCase();
         String type = CONTENT_TYPES.get (ext);
         if (type == null)
@@ -214,14 +221,14 @@ public class RequestHandler extends Thread
             log.warn("Unknown extension "+ext+". Using content type text/plain.");
             type = "text/plain";
         }
-        println (type);
-        println ();
+        println (out, type);
+        println (out);
         if (headOnly) {
             log.info("HEAD for : " + url.toExternalForm());
             downloadLog.info("Downloaded: " + url.toExternalForm());
             return;
         }
-        InputStream data = new BufferedInputStream (new FileInputStream (f));
+        InputStream data = new BufferedInputStream (new FileInputStream (file));
         IOUtils.copy (data, out);
         data.close();
         downloadLog.info("Downloaded: " + url.toExternalForm());
@@ -338,39 +345,24 @@ public class RequestHandler extends Thread
     private final static SimpleDateFormat INTERNET_FORMAT = new SimpleDateFormat ("EEE, d MMM yyyy HH:mm:ss zzz");
     private byte[] NEW_LINE = new byte[] { '\r', '\n' };
     
-    private void println (String string) throws IOException
+    private void println(OutputStream out, String string) throws IOException
     {
-        print (string);
-        println ();
+        print (out, string);
+        println(out);
     }
 
-    private void println () throws IOException
+    private void println (OutputStream out) throws IOException
     {
-        getOut().write(NEW_LINE);
+        out.write(NEW_LINE);
     }
     
-    private void print (String string) throws IOException
+    private void print (OutputStream out, String string) throws IOException
     {
-        getOut().write (string.getBytes("ISO-8859-1"));
-    }
-
-    private OutputStream out;
-    
-    protected OutputStream getOut () throws IOException
-    {
-        if (out == null)
-            out = new BufferedOutputStream (clientSocket.getOutputStream());
-        
-        return out;
+        out.write (string.getBytes("ISO-8859-1"));
     }
 
-    private BufferedInputStream in;
-    
-    private String readLine () throws IOException
+    private String readLine (InputStream in) throws IOException
     {
-        if (in == null)
-            in = new BufferedInputStream (clientSocket.getInputStream());
-        
         StringBuffer buffer = new StringBuffer (256);
         int c;
         
