@@ -53,8 +53,10 @@ public class RequestHandler extends Thread
     private final Socket clientSocket;
     private final Config config;
 
-    public RequestHandler (Socket clientSocket, Config config)
+    public RequestHandler(Socket clientSocket, Config config)
     {
+        if (clientSocket == null)
+            throw new RuntimeException ("Connection is already closed");
         this.clientSocket = clientSocket;
         this.config = config;
     }
@@ -62,9 +64,6 @@ public class RequestHandler extends Thread
     @Override
     public void run ()
     {
-        if (clientSocket == null)
-            throw new RuntimeException ("Connection is already closed");
-        
         try
         {
             log.debug ("Got connection from "+clientSocket.getInetAddress());
