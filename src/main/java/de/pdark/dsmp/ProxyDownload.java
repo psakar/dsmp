@@ -15,14 +15,23 @@
  */
 package de.pdark.dsmp;
 
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.Header;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.LaxRedirectStrategy;
+import org.apache.http.impl.client.SystemDefaultCredentialsProvider;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.log4j.Logger;
 
 import java.io.BufferedOutputStream;
@@ -33,6 +42,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Download a file via a proxy server and store it somewhere.
@@ -111,37 +121,51 @@ public class ProxyDownload
         }
         
         mkdirs();
-        
-        HttpClient client = new HttpClient();
 
-        String msg = "";
+
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(5 * 60, TimeUnit.SECONDS);
+        connectionManager.setValidateAfterInactivity(60*1000);
+        connectionManager.setDefaultMaxPerRoute(1);
+
+        RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
+        CredentialsProvider credentialsProvider = new SystemDefaultCredentialsProvider(); // or BasicCredentialsProvider ?
+        String msgProxyInfo = "";
         if (config.useProxy(url))
         {
-            Credentials defaultcreds = new UsernamePasswordCredentials(config.getProxyUsername(), config.getProxyPassword());
+            Credentials credentials = new UsernamePasswordCredentials(config.getProxyUsername(), config.getProxyPassword());
             AuthScope scope = new AuthScope(config.getProxyHost(), config.getProxyPort(), AuthScope.ANY_REALM);
-            HostConfiguration hc = new HostConfiguration ();
-            hc.setProxy(config.getProxyHost(), config.getProxyPort());
-            client.setHostConfiguration(hc);
-            client.getState().setProxyCredentials(scope, defaultcreds);
-            msg = "via proxy ";
-        }
-        log.info("Downloading "+msg+"to "+dest.getAbsolutePath());
-        
-        GetMethod get = new GetMethod(url.toString());
-        get.setFollowRedirects(true);
-        try
-        {
-            int status = client.executeMethod( get );
 
-            log.info ("Download status: "+status);
-            if (0 == 1 && log.isDebugEnabled())
-            {
-                Header[] header = get.getResponseHeaders();
-                for (Header aHeader : header) log.debug(aHeader.toString().trim());
-            }
-            
-            log.info ("Content: "+valueOf (get.getResponseHeader("Content-Length"))+" bytes; "
-                    +valueOf (get.getResponseHeader("Content-Type")));
+            credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(scope, credentials);
+
+            HttpHost proxy = new HttpHost(config.getProxyHost(), config.getProxyPort());
+            requestConfigBuilder.setProxy(proxy);
+
+            msgProxyInfo = "via proxy ";
+
+        }
+
+//        DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
+
+        CloseableHttpClient client = HttpClientBuilder.create()
+                .setConnectionManager(new BasicHttpClientConnectionManager())
+                .setConnectionManager(connectionManager)
+                .setDefaultCredentialsProvider(credentialsProvider)
+                .setDefaultRequestConfig(requestConfigBuilder.build())
+                .setRedirectStrategy(new LaxRedirectStrategy())
+//                .setRoutePlanner(routePlanner)
+                .build();
+
+        log.info("Downloading " + msgProxyInfo + "to "+dest.getAbsolutePath());
+
+        HttpGet httpGet = new HttpGet(url.toString());
+        try (CloseableHttpResponse response = client.execute(httpGet))
+        {
+            int status = response.getStatusLine().getStatusCode();
+
+            log.info ("Download status: " + status);
+            log.info ("Content: " + valueOf(response.getFirstHeader("Content-Length")) + " bytes; "
+                    + valueOf(response.getFirstHeader("Content-Type")));
             
             if (status != HttpStatus.SC_OK)
             {
@@ -162,21 +186,23 @@ public class ProxyDownload
                 throw new DownloadFailed (get);
             }
             
-            File dl = new File (dest.getAbsolutePath()+".new");
+            File dl = new File (dest.getAbsolutePath() + ".new");
             OutputStream out = new BufferedOutputStream (new FileOutputStream (dl));
-            IOUtils.copy (get.getResponseBodyAsStream(), out);
+            IOUtils.copy (response.getEntity().getContent(), out);
             out.close ();
             
-            File bak = new File (dest.getAbsolutePath()+".bak");
-            if (bak.exists())
+            File bak = new File (dest.getAbsolutePath() + ".bak");
+            if (bak.exists()) {
                 bak.delete();
-            if (dest.exists())
+            }
+            if (dest.exists()) {
                 dest.renameTo(bak);
+            }
             dl.renameTo(dest);
         }
         finally
         {
-            get.releaseConnection();
+            client.close();
         }
     }
 
