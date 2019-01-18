@@ -26,8 +26,8 @@
 	<description>Dead Simple Maven Proxy</description>
 
 	<properties>
-		<maven.compiler.source>1.6</maven.compiler.source>
-		<maven.compiler.target>1.6</maven.compiler.target>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 
 	<build>
@@ -107,6 +107,7 @@
 				<artifactId>maven-surefire-report-plugin</artifactId>
 				<version>2.18.1</version>
 			</plugin>
+			<!--
 			<plugin>
 				<artifactId>maven-jxr-plugin</artifactId>
 				<version>2.0</version>
@@ -121,6 +122,7 @@
 					<targetJdk>1.5</targetJdk>
 				</configuration>
 			</plugin>
+			-->
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>cobertura-maven-plugin</artifactId>
