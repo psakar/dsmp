@@ -48,6 +48,7 @@ public class RequestHandler extends Thread
     public static final Logger log = Logger.getLogger(RequestHandler.class);
 
     public static final Logger downloadLog = Logger.getLogger("downloadLog");
+    public static final String KEEP_ALIVE_HEADER = "Proxy-Connection: Keep-Alive".toLowerCase();
 
     private final Socket clientSocket;
     private final Config config;
@@ -84,8 +85,9 @@ public class RequestHandler extends Thread
                     fullRequest.append (line);
                     fullRequest.append ('\n');
                     
-                    if ("Proxy-Connection: keep-alive".equals (line))
+                    if (KEEP_ALIVE_HEADER.equals (line.toLowerCase())) {
                         keepAlive = true;
+                    }
                     
                     if (line.startsWith("GET "))
                     {
