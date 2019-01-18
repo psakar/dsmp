@@ -18,6 +18,7 @@ package de.pdark.dsmp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Set;
 /**
  * The main class.
  * 
@@ -42,6 +43,37 @@ public class Main
             Server server = new Server (config);
             log.info("Dead Stupid Maven Proxy "+VERSION+" is ready.");
             log.debug ("Debugging is enabled.");
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("Terminate server");
+                server.terminateAll();
+                System.out.println("Interrupting threads");
+                Set<Thread> runningThreads = Thread.getAllStackTraces().keySet();
+                for (Thread th : runningThreads) {
+                    if (th != Thread.currentThread()
+                            && !th.isDaemon()
+                            /*&& th.getClass().getName().startsWith("org.brutusin")*/) {
+                        System.out.println("Interrupting '" + th.getClass() + "' termination");
+                        th.interrupt();
+                    }
+                }
+                for (Thread th : runningThreads) {
+                    try {
+                        if (th != Thread.currentThread()
+                                && !th.isDaemon()
+                                && th.isInterrupted()) {
+                            System.out.println("Waiting '" + th.getName() + "' termination");
+                            th.join();
+                        }
+                    } catch (InterruptedException ex) {
+                        System.out.println("Shutdown interrupted");
+                    }
+                }
+                LogManager.shutdown();
+                System.out.println("Shutdown finished");
+            }));
+            log.info("Registered shutdown hook");
+            System.out.println("Registered shutdown hook");
             server.handleRequests ();
         }
         catch (Exception e)

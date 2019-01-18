@@ -46,7 +46,7 @@ public class Server
         socket = new ServerSocket (port);
     }
 
-    private static boolean run = true;
+    private static volatile boolean run = true;
     
     public void terminateAll ()
     {
