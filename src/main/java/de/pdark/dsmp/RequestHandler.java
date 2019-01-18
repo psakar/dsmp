@@ -94,17 +94,11 @@ public class RequestHandler extends Thread
                     
                     if (KEEP_ALIVE_HEADER.equals (line.toLowerCase())) {
                         keepAlive = true;
-                    }
-                    
-                    if (line.startsWith("GET "))
-                    {
+                    } else if (line.startsWith("GET ")) {
                         int pos = line.lastIndexOf(' ');
                         line = line.substring(4, pos);
                         downloadURL = line;
-                    }
-
-                    if (line.startsWith("HEAD "))
-                    {
+                    } else if (line.startsWith("HEAD ")) {
                         int pos = line.lastIndexOf(' ');
                         line = line.substring(4, pos);
                         downloadURL = line;
