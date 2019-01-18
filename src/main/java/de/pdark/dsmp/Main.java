@@ -18,7 +18,9 @@ package de.pdark.dsmp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.file.Paths;
 import java.util.Set;
+
 /**
  * The main class.
  * 
@@ -41,8 +43,10 @@ public class Main
             config.reload();
             
             Server server = new Server (config);
-            log.info("Dead Stupid Maven Proxy "+VERSION+" is ready.");
-            log.debug ("Debugging is enabled.");
+            String startupInfo = "Dead Stupid Maven Proxy " + VERSION + " is ready (running in " + Paths.get("").toAbsolutePath() + " ).";
+            System.out.println(startupInfo);
+            log.info(startupInfo);
+            log.debug("Debugging is enabled.");
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("Terminate server");
