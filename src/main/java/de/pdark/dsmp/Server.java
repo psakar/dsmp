@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 
 /**
  * Wait for connections from somewhere and pass them on to <code>RequestHandler</code>
@@ -58,21 +57,12 @@ public class Server
     {
         while (run)
         {
-            Socket clientSocket;
-
-            try
-            {
-                clientSocket = socket.accept();
+            // config.reload ();
+            try {
+                new RequestHandler(socket.accept(), config).start();
+            } catch (IOException e) {
+                log.error("Error acception connection from client - " + e.getMessage(), e);
             }
-            catch (IOException e)
-            {
-                log.error("Error acception connection from client", e);
-                continue;
-            }
-            
-//            config.reload ();
-            Thread t = new RequestHandler (clientSocket, config);
-            t.start();
         }
         
         try
