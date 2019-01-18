@@ -15,8 +15,7 @@
  */
 package de.pdark.dsmp;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.plexus.digest.DigesterException;
 import org.codehaus.plexus.digest.Md5Digester;
@@ -269,7 +268,7 @@ public class RequestHandler extends Thread
             {
                 FileWriter w = new FileWriter (f);
                 w.write(checksum);
-                w.write(SystemUtils.LINE_SEPARATOR);
+                w.write(System.lineSeparator());
                 w.close ();
             }
         }
