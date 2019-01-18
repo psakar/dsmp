@@ -81,7 +81,7 @@ public class Server
         }
         catch (IOException e)
         {
-            log.error("Error closing server socket", e);
+            log.error("Error closing server socket - " + e.getMessage(), e);
         }
     }
     
