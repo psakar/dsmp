@@ -88,7 +88,7 @@ public class RequestHandler extends Thread
                     if (line.length() == 0)
                         break;
                     
-                    log.debug ("Got: "+line);
+                    log.debug ("Got: " + line);
                     fullRequest.append (line);
                     fullRequest.append ('\n');
                     
@@ -111,11 +111,11 @@ public class RequestHandler extends Thread
                     if (line == null)
                         break;
                     
-                    log.error ("Found no URL to download in request:\n"+fullRequest.toString());
+                    log.error ("Found no URL to download inputStreamBuffered request:\n"+fullRequest.toString());
                 }
                 else
                 {
-                    log.info ("Got request for "+downloadURL);
+                    log.info("Got request for " + downloadURL);
                     outputStream = clientSocket.getOutputStream();
                     OutputStream outputStreamBuffered = new BufferedOutputStream(outputStream);
                     serveURL(outputStreamBuffered, inputStreamBuffered, downloadURL, headOnly);
@@ -144,7 +144,7 @@ public class RequestHandler extends Thread
         }
         catch (Exception e)
         {
-            log.error ("Exception while closing the outputstream", e);
+            log.error ("Exception while closing the output stream " + e.getMessage(), e);
         }
 
         try
@@ -154,13 +154,13 @@ public class RequestHandler extends Thread
         }
         catch (Exception e)
         {
-            log.error ("Exception while closing the inputstream", e);
+            log.error ("Exception while closing the input stream " + e.getMessage(), e);
         }
 
         try
         {
-            if (clientSocket != null)
-                clientSocket.close();
+            if (this.clientSocket != null)
+                this.clientSocket.close();
         }
         catch (Exception e)
         {
