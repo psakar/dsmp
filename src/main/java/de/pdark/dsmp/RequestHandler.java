@@ -16,6 +16,7 @@
 package de.pdark.dsmp;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.digest.DigesterException;
@@ -192,9 +193,11 @@ public class RequestHandler extends Thread
             }
             catch (DownloadFailed e)
             {
-                log.error(e.getMessage());
-                
-                println (e.getStatusLine());
+                if (e.status == HttpStatus.SC_NOT_FOUND || e.status == HttpStatus.SC_FORBIDDEN) {
+                    log.info(e.getMessage());
+                } else {
+                    log.error(e.getMessage(), e);
+                }
                 println (out, e.statusLine);
                 println (out);
                 out.flush();
