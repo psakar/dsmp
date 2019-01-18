@@ -39,11 +39,10 @@ import org.apache.logging.log4j.Logger;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -96,7 +95,7 @@ public class ProxyDownload
     {
         if (!config.isAllowed(url))
         {
-            throw new DownloadFailed ("HTTP/1.1 "+HttpStatus.SC_FORBIDDEN+" Download denied by rule in DSMP config");
+            throw new DownloadFailed (url, HttpStatus.SC_FORBIDDEN,"HTTP/1.1 " + HttpStatus.SC_FORBIDDEN + " Download denied by rule in DSMP config");
         }
         
         // If there is a status file in the cache, return it instead of trying it again
@@ -107,19 +106,8 @@ public class ProxyDownload
         File statusFile = new File (dest.getAbsolutePath()+".status");
         if (statusFile.exists())
         {
-            try
-            {
-                FileReader r = new FileReader (statusFile);
-                char[] buffer = new char[(int)statusFile.length()];
-                int len = r.read (buffer);
-                r.close ();
-                String status = new String (buffer, 0, len);
-                throw new DownloadFailed (status);
-            }
-            catch (IOException e)
-            {
-                log.warn ("Error writing 'File not found'-Status to "+statusFile.getAbsolutePath(), e);
-            }
+            String status = new String(Files.readAllBytes(statusFile.toPath()));
+            throw new DownloadFailed (url, HttpStatus.SC_NOT_FOUND, status);
         }
         
         mkdirs();
@@ -174,18 +162,9 @@ public class ProxyDownload
                 // Remember "File not found"
                 if (status == HttpStatus.SC_NOT_FOUND)
                 {
-                    try
-                    {
-                        FileWriter w = new FileWriter (statusFile);
-                        w.write (get.getStatusLine().toString());
-                        w.close ();
-                    }
-                    catch (IOException e)
-                    {
-                        log.warn ("Error writing 'File not found'-Status to "+statusFile.getAbsolutePath(), e);
-                    }
+                    Files.write(statusFile.toPath(), response.getStatusLine().toString().getBytes());
                 }
-                throw new DownloadFailed (get);
+                throw new DownloadFailed (url, status, response.getStatusLine());
             }
             
             File dl = new File (dest.getAbsolutePath() + ".new");

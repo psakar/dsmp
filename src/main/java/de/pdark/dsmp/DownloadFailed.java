@@ -15,7 +15,9 @@
  */
 package de.pdark.dsmp;
 
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.StatusLine;
+
+import java.net.URL;
 
 /**
  * This exception extracts information from a failed GET request and
@@ -26,22 +28,20 @@ import org.apache.commons.httpclient.methods.GetMethod;
  */
 public class DownloadFailed extends Exception
 {
-    private String statusLine;
-    
-    public DownloadFailed (GetMethod get)
+    public final URL url;
+    public final int status;
+    public final String statusLine;
+
+    public DownloadFailed(URL url, int status, String statusLine)
     {
-        super ("Download failed: "+get.getStatusLine().toString());
-        statusLine = get.getStatusLine().toString();
+        super ("Download of " + url.toString() + " failed with status " + status + " - " + statusLine);
+        this.statusLine = statusLine;
+        this.url = url;
+        this.status = status;
     }
 
-    public DownloadFailed (String message)
-    {
-        super ("Download failed: "+message);
-        statusLine = message;
+    public DownloadFailed(URL url, int status, StatusLine statusLine) {
+        this(url, status, statusLine.toString());
     }
 
-    public String getStatusLine ()
-    {
-        return statusLine;
-    }
 }
